@@ -1,0 +1,85 @@
+﻿services:
+  postgres:
+    image: postgres:15
+    container_name: show_time_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: show_time_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongo:6.0
+    container_name: show_time_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  redis:
+    image: redis:7.2
+    container_name: show_time_redis_cache
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: show_time_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  catalog-service:
+    build:
+      context: .
+      dockerfile: ./server/catalog-service/Dockerfile
+    env_file: .env
+    ports:
+      - "${CATALOG_SERVICE_PORT}:5001"
+    depends_on:
+      - mongodb
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ./server/api-gateway/Dockerfile
+    env_file: .env
+    ports:
+      - "${API_GATEWAY_PORT}:5000"
+    depends_on:
+      - catalog-service
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: ./server/notification-service/Dockerfile
+    env_file: .env
+    depends_on:
+      - rabbitmq
+
+  identity-service:
+    build:
+      context: .
+      dockerfile: ./server/identity-service/Dockerfile
+    env_file: .env
+    ports:
+      - "${IDENTITY_SERVICE_PORT}:5002"
+    depends_on:
+      - postgres
+
+  booking-service:
+    build:
+      context: .
+      dockerfile: ./server/booking-service/Dockerfile
+    env_file: .env
+    ports:
+      - "${BOOKING_SERVICE_PORT}:5003"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+  mongodb_data:
