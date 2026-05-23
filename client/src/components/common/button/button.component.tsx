@@ -17,7 +17,7 @@ const ButtonComponent: React.FC<ButtonProps> = (props) => {
   
   return (
     <button
-      disabled
+      disabled={disabled}
       className={`${baseStyle} ${sizeStyles[size]} ${variantStyles[variant]} ${disabledStyles} ${className}`}
       {...rest}
     >

@@ -36,6 +36,7 @@ const AuthLayout = () => {
                             lg:w-[45%]
                             xl:w-[38%]
                             h-auto
+                            min-h-[400px]
                             lg:max-h-[90%]
                             p-5 sm:p-6 md:p-8
                             bg-white/20
