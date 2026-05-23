@@ -1,66 +1,86 @@
-import { useState, type ChangeEvent, type FormEvent } from "react"
+import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAppDispatch } from "../store/hooks";
+import { loginUser } from "../store/authSlice";
 
 interface FormData {
-    email: string;
-    password: string;
+  email: string;
+  password: string;
 }
 
 interface FormErrors {
-    email?: string;
-    password?: string;
-    general?: string;
+  email?: string;
+  password?: string;
+  general?: string;
 }
 
 export const useLoginForm = () => {
-    const [formData, setFormData] = useState<FormData>({
-        email: "", password: ""
-    });
-    const [errors, setErrors] = useState<FormErrors>({});
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [rememberMe, setRememberMe] = useState<boolean>(false);
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [formData, setFormData] = useState<FormData>({
+    email: "",
+    password: "",
+  });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [rememberMe, setRememberMe] = useState<boolean>(false);
 
-    const validateForm = () => {
-        const newErrors: FormErrors = {};
-        if (!formData.email) {
-            newErrors.email = "Email is required";
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-            newErrors.email = "Invalid email";
-        }
-
-        if (!formData.password) {
-            newErrors.password = "Password is required";
-        } else if (formData.password.length < 5) {
-            newErrors.password = "Minimum 6 characters are required"
-        }
-        // TODO: Implement further validations of uppercase, lowercase, special characters, etc.
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+  const validateForm = () => {
+    const newErrors: FormErrors = {};
+    if (!formData.email) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Invalid email";
     }
 
-    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value}));
-
-        if (errors[name as keyof FormErrors]) {
-            setErrors((prev) => ({ ...prev, [name]: undefined }))
-        }
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 5) {
+      newErrors.password = "Minimum 6 characters are required";
     }
 
-    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-        if (!validateForm()) return;
-        setIsLoading(true);
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
 
-        try {
-            await new Promise((res) => setTimeout(res, 2000));
-            console.log("Login success", { ...formData, rememberMe });
-        } catch { setErrors({ general: "Login failed" })}
-        finally { setIsLoading(false) }
+    if (errors[name as keyof FormErrors]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
+  };
 
-    return {
-        formData, errors, isLoading, rememberMe, setRememberMe, handleChange, handleSubmit
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+    setIsLoading(true);
+
+    try {
+      const resultAction = await dispatch(loginUser(formData));
+      if (loginUser.fulfilled.match(resultAction)) {
+        const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/dashboard";
+        navigate(from, { replace: true });
+      } else {
+        setErrors({ general: resultAction.payload as string || "Login failed" });
+      }
+    } catch {
+      setErrors({ general: "Login failed" });
+    } finally {
+      setIsLoading(false);
     }
-}
+  };
+
+  return {
+    formData,
+    errors,
+    isLoading,
+    rememberMe,
+    setRememberMe,
+    handleChange,
+    handleSubmit,
+  };
+};

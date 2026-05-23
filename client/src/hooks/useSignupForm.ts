@@ -1,4 +1,7 @@
-import { useState, type ChangeEvent, type FormEvent } from "react"
+import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAppDispatch } from "../store/hooks";
+import { registerUser } from "../store/authSlice";
 
 interface FormData {
     fullName: string;
@@ -16,6 +19,9 @@ interface FormErrors {
 }
 
 export const useSignupForm = () => {
+    const dispatch = useAppDispatch();
+    const navigate = useNavigate();
+    const location = useLocation();
     const [formData, setFormData] = useState<FormData>({
         fullName: "",
         email: "",
@@ -101,9 +107,15 @@ export const useSignupForm = () => {
 
         try {
             const { confirmPassword, ...signupData } = formData;
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-        } catch (error) {
-            setErrors({ general: "Failed to create account. Please try again.", });
+            const resultAction = await dispatch(registerUser(signupData));
+            if (registerUser.fulfilled.match(resultAction)) {
+                const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/dashboard";
+                navigate(from, { replace: true });
+            } else {
+                setErrors({ general: (resultAction.payload as string) || "Failed to create account. Please try again." });
+            }
+        } catch {
+            setErrors({ general: "Failed to create account. Please try again." });
         } finally {
             setIsLoading(false);
         }

@@ -2,9 +2,6 @@ import { InputField } from '../../common/form/input.component'
 import { useLoginForm } from '../../../hooks/useLoginForm'
 import { Link } from 'react-router-dom';
 import ButtonComponent from '../../common/button/button.component';
-import Divider from '../../common/divider.component';
-import GoogleAuth from '../google/google.component';
-import FacebookComponent from '../google/facebook.component';
 
 const LoginForm = () => {
     const { formData, errors, isLoading, rememberMe, setRememberMe, handleChange, handleSubmit } = useLoginForm();
